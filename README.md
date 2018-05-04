@@ -11,8 +11,7 @@ Bot consists of two devices one is Arduino a micro controller that is used to dr
 </ul>
 <h2>For Detailed Working of project see SPYbot.pptx</h2>
 <h2>Circuit Diagram</h2>
-![robotics_bb](Robotics_bb.jpg)
-
+<img src="https://raw.githubusercontent.com/pranjulsingh/Wireless-Car-with-Camera/master/Robotics_bb.jpg">
 <h2>To Run the project:</h2>
 <ul>
   <li>Make Proper connections as shown in circuit diagram</li>
