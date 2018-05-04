@@ -11,7 +11,7 @@ Bot consists of two devices one is Arduino a micro controller that is used to dr
 </ul>
 <h2>For Detailed Working of project see SPYbot.pptx</h2>
 <h2>Circuit Diagram</h2>
-![robotics_bb](https://user-images.githubusercontent.com/35999219/39650128-984a02f0-5004-11e8-8cc3-caf5c40c9e38.jpg)
+![robotics_bb](Robotics_bb.jpg)
 
 <h2>To Run the project:</h2>
 <ul>
