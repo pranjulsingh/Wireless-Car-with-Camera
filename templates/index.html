@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <title>Video Streaming Demonstration</title>
+    <meta id="my-data" data-name="{{ url_for('video_feed') }}" data-other="{{other}}">
+    <style>
+        body {
+            margin: 0px;
+            padding: 0px;
+        }
+    </style>
+  </head>
+  <body>
+    <img src="{{ url_for('video_feed') }}" height="100%" width="100%">
+<!--
+    <button id="arm_up" onmousedown="ajax_call('arm', 1)" onmouseup="ajax_call('arm', 0)">UP</button>
+    <button id="arm_down" onmousedown="ajax_call('arm', -1)" onmouseup="ajax_call('arm', 0)">Down</button>
+    <p id="demo"><a href="{{ url_for('reqTest') }}">qwertyu</a></p>
+
+    <script>
+
+        function ajax_call(dev, val) {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                document.getElementById("demo").innerHTML = this.responseText;
+                }
+            };
+            xhttp.open("GET", "{{ url_for('reqTest') }}"+"?device="+dev+"&value="+val, true);
+            xhttp.send();
+        }
+
+    </script>
+
+-->
+  </body>
+</html>
