@@ -20,3 +20,385 @@ from sklearn.model_selection import train_test_split
 # #### comma_sep_to_hot_encoder() takes dataframe with one column as input and returns a new dataframe with onehot encodeed value
 
 # In[3]:
+
+
+def comma_sep_to_hot_encoder(df):
+    assert isinstance(df, pd.core.frame.DataFrame), "Require pandas DataFrame"
+    assert len(df.columns)==1, "Require DataFrame with one column"
+    unique_vals = set([])
+    for values in df[df.columns[0]]:
+        for value in values.split(','):
+            unique_vals.add(df.columns[0]+'_'+value.strip())
+    output_df = pd.DataFrame(0, index=np.arange(df.shape[0]), columns=unique_vals)
+    print(len(unique_vals))
+    i=0
+    for values in df[df.columns[0]]:
+        ind_values = set([])
+        for value in values.split(','):
+            ind_values.add(df.columns[0]+'_'+value.strip())
+        for ind_value in ind_values:
+            output_df.at[i, ind_value] = 1
+        i+=1
+    return output_df
+
+
+# In[4]:
+
+
+df_original = pd.read_csv('zomato-bangalore-restaurants/zomato.csv')
+df_processed = df_original.copy()
+df_original.head()
+
+
+# In[5]:
+
+
+df_original.info()
+
+
+# In[6]:
+
+
+df_original.describe()
+
+
+# <h2>Process Locations</h2>
+
+# #### Number of null values in Locations
+
+# In[7]:
+
+
+sum(pd.isnull(df_original['location']))
+
+
+# #### Filling null values in location with the location in absolute address of restaurant
+
+# In[8]:
+
+
+df_processed['location'] = df_processed.apply(lambda row: row['address'].split(',')[-2].strip() if pd.isnull(row['location']) else row['location'], axis=1)
+print('Null locations in processed dataframe: ',sum(pd.isnull(df_processed['location'])))
+unique_locations = list(df_processed['location'].unique())
+unique_locations.sort()
+unique_locations
+
+
+# In[9]:
+
+
+df_processed.info()
+
+
+# <h2>Process cuisines</h2>
+
+# #### Number of null values in cuisines
+
+# In[10]:
+
+
+sum(df_processed['cuisines'].isnull())
+
+
+# In[11]:
+
+
+sum(df_processed['dish_liked'].isnull() & df_processed['cuisines'].isnull())
+
+
+# 'dish_liked' column could be used to predict and fill the null values in 'cuisines' but as shown above the intersection of null values of 'dish_liked' and 'cuisines' is equal to the null values of 'cuisines'
+# So, it will be better to drop the rows containing null values in cuisines
+
+# In[12]:
+
+
+df_processed.loc[df_processed['dish_liked'].isnull() & df_processed['cuisines'].isnull()]
+
+
+# In[13]:
+
+
+df_processed = df_processed.loc[pd.isnull(df_processed['cuisines'])==False]
+df_processed = df_processed.reset_index(drop=True)
+
+
+# In[14]:
+
+
+df_processed.info()
+
+
+# In[15]:
+
+
+all_cuisine_df = comma_sep_to_hot_encoder(pd.DataFrame(df_processed['cuisines'], columns=['cuisines']))
+
+
+# In[16]:
+
+
+all_cuisine_df.info()
+
+
+# In[17]:
+
+
+df_processed = pd.concat([df_processed, all_cuisine_df], axis=1, sort=False)
+
+
+# In[18]:
+
+
+df_processed.info()
+
+
+# ## Process Restaurant type (rest_type)
+
+# In[19]:
+
+
+sum(pd.isnull(df_processed['rest_type']))
+
+
+# In[20]:
+
+
+df_processed['rest_type'] = df_processed['rest_type'].fillna("")
+
+
+# In[21]:
+
+
+all_rest_type_df = comma_sep_to_hot_encoder(pd.DataFrame(df_processed['rest_type'], columns=['rest_type']))
+
+
+# In[22]:
+
+
+all_rest_type_df.head()
+
+
+# In[23]:
+
+
+len(df_processed.loc[pd.isnull(df_processed['rest_type']) & pd.isnull(df_processed['cuisines'])])
+
+
+# ### Model to predict Restaurant Type using cuisines
+
+# In[24]:
+
+
+Y = all_rest_type_df.loc[all_rest_type_df['rest_type_']==0]
+Y.shape
+
+
+# In[25]:
+
+
+all_cuisine_df.info()
+
+
+# In[26]:
+
+
+k = list(Y.index)
+print(max(k))
+
+
+# In[27]:
+
+
+X = all_cuisine_df.iloc[k,:]
+X.shape
+
+
+# In[28]:
+
+
+Y = Y.values
+X = X.values
+
+
+# In[29]:
+
+
+X_train, X_test, Y_train, Y_test = train_test_split(X,Y, test_size=0.1, random_state=16)
+
+
+# In[30]:
+
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
+
+
+# In[31]:
+
+
+X_train = X_train.astype(float)
+X_test = X_test.astype(float)
+
+
+# In[32]:
+
+
+classifier = RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 42)
+classifier.fit(X_train, Y_train)
+
+
+# In[33]:
+
+
+Y_pred = classifier.predict(X_test)
+
+
+# In[34]:
+
+
+Y_pred[3]
+
+
+# In[35]:
+
+
+from sklearn.metrics import accuracy_score
+accuracy_score(Y_test,Y_pred)
+
+
+# In[36]:
+
+
+Y_2_pred = all_rest_type_df.loc[all_rest_type_df['rest_type_']==1]
+Y_2_pred.shape
+
+
+# In[37]:
+
+
+X_2_imp = all_cuisine_df.iloc[list(Y_2_pred.index),:]
+X_2_imp.shape
+
+
+# In[38]:
+
+
+all_rest_type_df.loc[all_rest_type_df['rest_type_']==1] = classifier.predict(X_2_imp)
+
+
+# In[39]:
+
+
+all_rest_type_df.info()
+
+
+# In[40]:
+
+
+all_rest_type_df = all_rest_type_df.drop(['rest_type_'], axis=1)
+
+
+# In[41]:
+
+
+all_rest_type_df.info()
+
+
+# In[42]:
+
+
+df_processed = pd.concat([df_processed, all_rest_type_df], axis=1, sort=False)
+
+
+# In[43]:
+
+
+df_processed.info()
+
+
+# <h2>Process Ratings</h2>
+
+# <h3>Total null values in ratings</h3>
+
+# In[44]:
+
+
+sum(df_processed['rate'].isnull())
+
+
+# <h3>Number of New Restaurants with no ratings</h3>
+
+# In[45]:
+
+
+len(df_processed.loc[df_processed['rate']=='NEW'])
+
+
+# deriving a new attribute from ratings as new restaurant might be useful in our prediction
+
+# In[46]:
+
+
+df_processed['new_restaurent'] = 0
+
+
+# In[47]:
+
+
+df_processed.loc[df_processed['rate']=='NEW',['new_restaurent']] = 1
+
+
+# In[48]:
+
+
+df_processed.info()
+
+
+# <h3> Data having '-' as rating</h3>
+
+# In[49]:
+
+
+len(df_processed.loc[df_processed['rate']=='-'])
+
+
+# df['rate'] = df['rate'].astype('str')
+# df['rate'] = df['rate'].fillna('0.0/5')
+# df['rate'] = df['rate'].replace('NEW', '0.0/5')
+# df['rate'] = df['rate'].replace('-', '0.0/5')
+# df['rate'] = df['rate'].replace('nan', '0.0/5')
+# df['rate'] = df['rate'].apply(lambda x: x.replace('/5', ''))
+# df['rate'] = df['rate'].astype('float')
+# set(df['rate'].values)
+
+# ## Process reviews_list
+
+# In[51]:
+
+
+reviews_list = df_processed['reviews_list']
+
+
+# In[56]:
+
+
+list(reviews_list.iloc[:1])
+
+
+# In[58]:
+
+
+reviews_list.describe()
+
+
+# In[59]:
+
+
+sum(df_processed['reviews_list'].isnull())
+
+
+# In[ ]:
+
+
+
+
