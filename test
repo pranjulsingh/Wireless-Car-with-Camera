@@ -44,6 +44,9 @@ dataset.text = dataset.text.apply(lambda a: [lemmatizer.lemmatize(w, pos='v') fo
 # Printing top 5 rows of processed dataset
 print(dataset.head())
 
+# Saving processed dataset
+dataset.to_csv("processed_data.csv")
+
 # Converting the text column into one-hot-encoded values
 # Each column representing single unique word
 from sklearn.preprocessing import MultiLabelBinarizer
